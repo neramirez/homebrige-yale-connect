@@ -1,27 +1,127 @@
 {
-  "pluginAlias": "Yale Connect",
+  "pluginAlias": "Yale Hub Connect",
   "pluginType": "platform",
   "singular": true,
+  "customUi": true,
+  "headerDisplay": "<p align='center'><img width='100px' src='https://user-images.githubusercontent.com/9875439/102681754-ac2eb800-4189-11eb-8e17-7c47c804484b.png'></p>\n\nThe **August** plugin allows you to control August Devices. \n\nTo get started link your August Account.\n\n1. Input your August E-mail/Phone Number into the August Account Info.\n\n2.Restart Homebridge to receive an August Validate Code.\n\n3. Input your Validate Code into the August Account Info.\n\n4. Finally Restart Homebridge.",
+  "footerDisplay": "Please raise any issues on our [project page](https://github.com/donavanbecker/homebridge-august/issues).\n\nIf you would like to have other August Devices added to this plugin fill out [Feature Request Form](https://github.com/donavanbecker/homebridge-august/issues/new?assignees=&labels=&template=feature_request.md).",
   "schema": {
     "type": "object",
     "properties": {
+      "name": {
+        "type": "string",
+        "title": "Name",
+        "default": "Yale Hub Connect"
+      },
       "credentials": {
         "type": "object",
         "properties": {
           "email": {
-            "title": "Name",
-            "type": "email",
-            "required": true,
-            "default": "Yale Connect Email"
+            "title": "Yale hub email",
+            "type": "string",
+            "x-schema-form": {
+              "type": "username"
+            }
           },
           "password": {
-            "title": "Password",
-            "type": "password",
-            "required": true,
-            "default": "Yale Password"
+            "title": "Yale Hub Password",
+            "type": "string",
+            "x-schema-form": {
+              "type": "password"
+            }
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "isValidated": {
+            "title": "Validated",
+            "type": "boolean"
+          },
+          "notice": {
+            "title": "Notice",
+            "type": "string",
+            "default": "Keep your tokens a secret!"
+          }
+        },
+        "required": ["email", "password", "token", "notice"]
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "refreshRate": {
+            "title": "Refresh Rate",
+            "type": "number",
+            "minimum": 30,
+            "placeholder": 360,
+            "description": "Indicates the number of seconds between polls of Yale HUB API."
+          },
+          "pushRate": {
+            "title": "Push Rate",
+            "type": "number",
+            "placeholder": 1,
+            "description": "Indicates the number of seconds between pushes to Yale API."
+          },
+          "logging": {
+            "title": "Logging Setting",
+            "type": "string",
+            "oneOf": [
+              {
+                "title": "Standard Logging",
+                "enum": ["standard"]
+              },
+              {
+                "title": "No Logging",
+                "enum": ["none"]
+              },
+              {
+                "title": "Debug Logging",
+                "enum": ["debug"]
+              }
+            ]
           }
         }
       }
+    },
+    "required": ["name", "credentials"]
+  },
+  "layout": [
+    {
+      "type": "fieldset",
+      "title": "August Account Info",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "credentials.email",
+        "credentials.password",
+        "credentials.token",
+        "credentials.isValidated"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Advanced Settings",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        {
+          "type": "help",
+          "helpvalue": "<h5>Refresh Rate</h5><em class='primary-text'>Refresh Rate indicates the number of seconds between polls of Yale API.</em>"
+        },
+        {
+          "key": "options.refreshRate",
+          "notitle": true
+        },
+        {
+          "type": "help",
+          "helpvalue": "<h5>Push Rate</h5><em class='primary-text'>Push Rate indicates the number of seconds between pushes to Yale API.</em>"
+        },
+        {
+          "key": "options.pushRate",
+          "notitle": true
+        },
+        "options.logging"
+      ]
     }
-  }
+  ]
 }
