@@ -47,7 +47,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
       this.verifyConfig();
       this.yaleHub = new YaleConnectClient(this.config, this.log);
       this.debugLog('Config OK');
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.errorLog(`Verify Config: ${e}`);
       return;
     }
@@ -70,7 +70,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
           this.errorLog(`accessToken: ${this.config.credentials.accessToken}, password: `
                         +`${this.config.credentials.password}, isValidated: ${this.config.credentials?.isValidated}`);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.errorLog(`Discover Devices 1: ${e}`);
       }
     });
@@ -127,25 +127,17 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-     * This method looks to see if session is already Validate, if not then sends a validateCode and saves the installId.
-     * After validateCode is saved to the config user must restart homebridge
-     * this process then looks to see if session is already validated and if the validateCode in config;
-     * if isValidated is false then it will validate iwth the validateCode and save isValidated as true in the config.json file
-     * will also make the validateCode undefined
-     * @param this.config.credentials.installId
-     * @param this.config.credentials.isValidated
-     * @param this.config.credentials.validateCode
+     * Checks teh access token, home ID and other parameters
      */
   async validate() {
     try {
 
       if (this.config.credentials && !this.config.credentials.isValidated) {
         await this.yaleCredentials();
-
         const accountId = await this.yaleHub.getAccountId();
         const accessControl = await this.yaleHub.getAdminAccessControlUserForStore();
         const homeId = accessControl.homeIds[0];
-
+        this.config.homeId = homeId;
         const isValidated = Boolean(accountId);
         // If validated successfully, set flag for future use, and you can now use the API
         this.config.credentials.isValidated = isValidated;
@@ -153,6 +145,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
         const { pluginConfig, currentConfig } = await this.pluginConfig();
         pluginConfig.homeId = homeId;
         pluginConfig.credentials.isValidated = this.config.credentials?.isValidated;
+        pluginConfig.credentials.accessToken = this.config.credentials.accessToken;
         pluginConfig.accountId = accountId;
 
         this.debugWarnLog(`isValidated: ${pluginConfig.credentials.isValidated}`);
@@ -166,7 +159,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
         }
       }
       this.verifyConfig();
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.errorLog(`Validated Error: ${e}`);
     }
   }
@@ -224,7 +217,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
       } else {
         this.errorLog('Yale Email & Password Supplied, Issue with Auth.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.errorLog(`Discover Devices 2: ${e}`);
     }
   }
@@ -300,7 +293,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
 
   logs() {
     this.debugMode = process.argv.includes('-D') || process.argv.includes('--debug');
-    if (this.config.options?.logging === 'debug' || this.config.options?.logging === 'standard' || this.config.options?.logging === 'none') {
+    if (this.config.options && ['debug', 'standard', 'none'].includes(this.config.options.logging)) {
       this.platformLogging = this.config.options!.logging;
       if (this.platformLogging.includes('debug')) {
         this.debugWarnLog(`Using Config Logging: ${this.platformLogging}`);
@@ -322,19 +315,19 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
      * If device level logging is turned on, log to log.warn
      * Otherwise send debug logs to log.debug
      */
-  infoLog(...log: any[]) {
+  infoLog(...log: string[]) {
     if (this.enablingPlatfromLogging()) {
       this.log.info(String(...log));
     }
   }
 
-  warnLog(...log: any[]) {
+  warnLog(...log: string[]) {
     if (this.enablingPlatfromLogging()) {
       this.log.warn(String(...log));
     }
   }
 
-  debugWarnLog(...log: any[]): void {
+  debugWarnLog(...log: string[]): void {
     if (this.enablingPlatfromLogging()) {
       if (this.platformLogging?.includes('debug')) {
         this.log.warn('[DEBUG]', String(...log));
@@ -342,13 +335,13 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  errorLog(...log: any[]) {
+  errorLog(...log: string[]) {
     if (this.enablingPlatfromLogging()) {
       this.log.error(String(...log));
     }
   }
 
-  debugErrorLog(...log: any[]): void {
+  debugErrorLog(...log: string[]): void {
     if (this.enablingPlatfromLogging()) {
       if (this.platformLogging?.includes('debug')) {
         this.log.error('[DEBUG]', String(...log));
@@ -356,7 +349,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  debugLog(...log: any[]) {
+  debugLog(...log: string[]) {
     if (this.enablingPlatfromLogging()) {
       if (this.platformLogging === 'debugMode') {
         this.log.debug(String(...log));

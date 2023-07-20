@@ -34,7 +34,7 @@ export class LockMechanism {
 
   // Lock Updates
   lockUpdateInProgress: boolean;
-  doLockUpdate: any;
+  doLockUpdate: Subject<void>;
 
   constructor(private readonly platform: YaleHubConnectPlatform, private accessory: PlatformAccessory, public device: DoorLock & Endpoint) {
     this.device = device;
@@ -49,71 +49,71 @@ export class LockMechanism {
     // Initial Device Parse
     this.refreshStatus();
 
-        // set accessory information
-        accessory
-          .getService(this.platform.Service.AccessoryInformation)!
-          .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Yale Home Inc.')
-          .setCharacteristic(this.platform.Characteristic.Model, this.device.doorlockTypeName);
+    // set accessory information
+    accessory
+      .getService(this.platform.Service.AccessoryInformation)!
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Yale Home Inc.')
+      .setCharacteristic(this.platform.Characteristic.Model, this.device.doorlockTypeName);
 
-        // Lock Mechanism Service
-        if (!this.lockService) {
-          this.debugLog(`Lock: ${accessory.displayName} Add Lock Mechanism Service`);
-          this.lockService =
+    // Lock Mechanism Service
+    if (!this.lockService) {
+      this.debugLog(`Lock: ${accessory.displayName} Add Lock Mechanism Service`);
+      this.lockService =
                 this.accessory.getService(this.platform.Service.LockMechanism) ||
                 this.accessory.addService(this.platform.Service.LockMechanism);
-          accessory.displayName;
-          // Service Name
-          this.lockService.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
-          //Required Characteristics" see https://developers.homebridge.io/#/service/LockMechanism
+      accessory.displayName;
+      // Service Name
+      this.lockService.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
+      //Required Characteristics" see https://developers.homebridge.io/#/service/LockMechanism
 
-          // Create handlers for required characteristics
-          this.lockService.getCharacteristic(this.platform.Characteristic.LockTargetState).onSet(this.setLockTargetState.bind(this));
-        } else {
-          this.warnLog(`Lock: ${accessory.displayName} Lock Mechanism Service Not Added`);
+      // Create handlers for required characteristics
+      this.lockService.getCharacteristic(this.platform.Characteristic.LockTargetState).onSet(this.setLockTargetState.bind(this));
+    } else {
+      this.warnLog(`Lock: ${accessory.displayName} Lock Mechanism Service Not Added`);
+    }
+
+    // Battery Service
+    this.batteryService =
+            this.accessory.getService(this.platform.Service.Battery) ||
+            this.accessory.addService(this.platform.Service.Battery);
+
+    // Retrieve initial values and updateHomekit
+    this.updateHomeKitCharacteristics();
+
+    // Subscribe to yale changes
+    this.subscribeYaleHub();
+
+    // Start an update interval
+    interval(this.deviceRefreshRate * 100)
+      .pipe(skipWhile(() => this.lockUpdateInProgress))
+      .subscribe(async () => {
+        await this.refreshStatus();
+      });
+
+    // Watch for Lock change events
+    // We put in a debounce of 100ms so we don't make duplicate calls
+    this.doLockUpdate
+      .pipe(
+        tap(() => {
+          this.lockUpdateInProgress = true;
+        }),
+        debounceTime(this.platform.config.options!.pushRate! * 100),
+      )
+      .subscribe(async () => {
+        try {
+          await this.pushChanges();
+        } catch (e: unknown) {
+          this.errorLog(`doLockUpdate pushChanges: ${e}`);
         }
-
-        // Battery Service
-        (this.batteryService =
-            this.accessory.getService(this.platform.Service.Battery) || this.accessory.addService(this.platform.Service.Battery)),
-        `${accessory.displayName} Battery`;
-
-        // Retrieve initial values and updateHomekit
-        this.updateHomeKitCharacteristics();
-
-        // Subscribe to yale changes
-        this.subscribeYaleHub();
-
-        // Start an update interval
-        interval(this.deviceRefreshRate * 100)
+        // Refresh the status from the API
+        interval(this.deviceRefreshRate * 500)
           .pipe(skipWhile(() => this.lockUpdateInProgress))
+          .pipe(take(1))
           .subscribe(async () => {
             await this.refreshStatus();
           });
-
-        // Watch for Lock change events
-        // We put in a debounce of 100ms so we don't make duplicate calls
-        this.doLockUpdate
-          .pipe(
-            tap(() => {
-              this.lockUpdateInProgress = true;
-            }),
-            debounceTime(this.platform.config.options!.pushRate! * 100),
-          )
-          .subscribe(async () => {
-            try {
-              await this.pushChanges();
-            } catch (e: any) {
-              this.errorLog(`doLockUpdate pushChanges: ${e}`);
-            }
-            // Refresh the status from the API
-            interval(this.deviceRefreshRate * 500)
-              .pipe(skipWhile(() => this.lockUpdateInProgress))
-              .pipe(take(1))
-              .subscribe(async () => {
-                await this.refreshStatus();
-              });
-            this.lockUpdateInProgress = false;
-          });
+        this.lockUpdateInProgress = false;
+      });
   }
 
   /**
@@ -172,9 +172,12 @@ export class LockMechanism {
       // Update HomeKit
       this.parseStatus();
       this.updateHomeKitCharacteristics();
-    } catch (e: any) {
-      this.errorLog(`refreshStatus: ${e}`);
-      this.errorLog(`Lock: ${this.accessory.displayName} failed lockStatus (refreshStatus), Error Message: ${superStringify(e.message)}`);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+
+        this.errorLog(`refreshStatus: ${e}`);
+        this.errorLog(`Lock: ${this.accessory.displayName} failed lockStatus (refreshStatus), Error Message: ${superStringify(e.message)}`);
+      }
     }
   }
 
@@ -194,9 +197,11 @@ export class LockMechanism {
       } else {
         this.errorLog(`Lock: ${this.accessory.displayName} lockStatus (pushChanges) failed, this.LockTargetState: ${this.LockTargetState}`);
       }
-    } catch (e: any) {
-      this.errorLog(`pushChanges: ${e}`);
-      this.errorLog(`Lock: ${this.accessory.displayName} failed pushChanges, Error Message: ${superStringify(e.message)}`);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        this.errorLog(`pushChanges: ${e}`);
+        this.errorLog(`Lock: ${this.accessory.displayName} failed pushChanges, Error Message: ${superStringify(e.message)}`);
+      }
     }
   }
 
@@ -301,19 +306,19 @@ export class LockMechanism {
   /**
      * Logging for Device
      */
-  infoLog(...log: any[]): void {
+  infoLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       this.platform.log.info(String(...log));
     }
   }
 
-  warnLog(...log: any[]): void {
+  warnLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       this.platform.log.warn(String(...log));
     }
   }
 
-  debugWarnLog(...log: any[]): void {
+  debugWarnLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       if (this.deviceLogging?.includes('debug')) {
         this.platform.log.warn('[DEBUG]', String(...log));
@@ -321,13 +326,13 @@ export class LockMechanism {
     }
   }
 
-  errorLog(...log: any[]): void {
+  errorLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       this.platform.log.error(String(...log));
     }
   }
 
-  debugErrorLog(...log: any[]): void {
+  debugErrorLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       if (this.deviceLogging?.includes('debug')) {
         this.platform.log.error('[DEBUG]', String(...log));
@@ -335,7 +340,7 @@ export class LockMechanism {
     }
   }
 
-  debugLog(...log: any[]): void {
+  debugLog(...log: string[]): void {
     if (this.enablingDeviceLogging()) {
       if (this.deviceLogging === 'debug') {
         this.platform.log.info('[DEBUG]', String(...log));

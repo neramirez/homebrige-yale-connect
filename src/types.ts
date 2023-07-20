@@ -71,7 +71,7 @@ export interface DoorLock {
 }
 
 export interface GetUpdatedObjectsResponse {
-    responseStatus: any;
+    responseStatus: number;
     newSerials: NewSerials;
     home: Home;
     devices: Device[];
@@ -95,21 +95,21 @@ export interface Home {
     accountID: number;
     enabled: boolean;
     timeZoneID: number;
-    devices: any;
-    account: any;
-    googleHomePinCode: any;
+    devices: string;
+    account: string;
+    googleHomePinCode: string;
 }
 
 export interface Device {
-    scriptObjectID: any;
-    deviceModel: any;
+    scriptObjectID: string;
+    deviceModel: string;
     technologyID: number;
-    privateKey: any;
-    firmwareVersion: any;
-    parameters: any;
+    privateKey: string;
+    firmwareVersion: string;
+    parameters: string;
     newFirmwareAvailable: boolean;
     numberOfEndpoints: number;
-    username: any;
+    username: string;
     deviceID: number;
     homeID: number;
     description: string;
@@ -121,25 +121,25 @@ export interface Device {
     enabled: boolean;
     isOnline: boolean;
     automaticFirmwareUpdate: boolean;
-    logicDeletionDateTime: any;
+    logicDeletionDateTime: string;
     dateTimeUpdated: string;
     password: string;
     enableNotification: boolean;
-    streamingUrl: any;
-    endpoints: any;
-    home: any;
+    streamingUrl: string;
+    endpoints: string;
+    home: string;
 }
 
 export interface Endpoint {
-    scriptObjectID: any;
-    deviceAddress: any;
-    deviceModelDesc: any;
+    scriptObjectID: string;
+    deviceAddress: string;
+    deviceModelDesc: string;
     functional: boolean;
     capabilities: number;
     meteringUnitID: number;
-    endpointModelDesc: any;
-    groups: any;
-    parameters: any;
+    endpointModelDesc: string;
+    groups: string;
+    parameters: string;
     endpointID: number;
     description: string;
     statusName: string;
@@ -153,13 +153,13 @@ export interface Endpoint {
     deviceID: number;
     pinCode: string;
     dateTimeCreated: string;
-    address: any;
+    address: string;
     enabled: boolean;
     isEditable: boolean;
-    logicDeletionDateTime: any;
+    logicDeletionDateTime: string;
     dateTimeUpdated: string;
     endpointTypeID: number;
-    positionCurtain: any;
+    positionCurtain: string;
 }
 
 
