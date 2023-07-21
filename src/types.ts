@@ -178,14 +178,10 @@ export interface ResponseStatus {
 }
 
 export interface YaleHubPlatformConfig extends PlatformConfig{
-    // platform?: string;
-    // name?: string;
-    // token?: string;
-    // credentials?: Credentials;
     homeId?: number;
     accountId?: number;
-    // entryCode?: number;
     options?: ConfigOptions;
+    entryCode?: number;
     credentials?: Credentials;
     locks?: LockDetails[];
     disablePlugin?: boolean;

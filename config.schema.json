@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "YaleHubConnect",
+  "pluginAlias": "YaleConnectClientPlatform",
   "pluginType": "platform",
   "singular": true,
   "customUi": true,
@@ -9,7 +9,7 @@
       "name": {
         "type": "string",
         "title": "Name",
-        "default": "YaleHubConnect"
+        "default": "YaleConnectClientPlatform"
       },
       "credentials": {
         "type": "object",
@@ -27,22 +27,13 @@
             "x-schema-form": {
               "type": "password"
             }
-          },
-          "token": {
-            "title": "Token",
-            "type": "string"
-          },
-          "isValidated": {
-            "title": "Validated",
-            "type": "boolean"
-          },
-          "notice": {
-            "title": "Notice",
-            "type": "string",
-            "default": "Keep your tokens a secret!"
           }
         },
-        "required": ["email", "password", "token", "notice"]
+        "required": ["email", "password"]
+      },
+      "token": {
+        "title": "Token",
+        "type": "string"
       },
       "options": {
         "type": "object",
@@ -81,7 +72,7 @@
         }
       }
     },
-    "required": ["name", "credentials"]
+    "required": ["name", "token", "credentials"]
   },
   "layout": [
     {
@@ -92,8 +83,7 @@
       "items": [
         "credentials.email",
         "credentials.password",
-        "credentials.token",
-        "credentials.isValidated"
+        "token"
       ]
     },
     {

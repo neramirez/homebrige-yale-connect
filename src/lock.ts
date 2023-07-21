@@ -30,14 +30,13 @@ export class LockMechanism {
 
   // Config
   deviceLogging!: string;
-  deviceRefreshRate!: number;
-
   // Lock Updates
   lockUpdateInProgress: boolean;
   doLockUpdate: Subject<void>;
 
   constructor(private readonly platform: YaleHubConnectPlatform, private accessory: PlatformAccessory, public device: DoorLock & Endpoint) {
     this.device = device;
+    // this.deviceRefreshRate = this.
     this.logs();
     this.cacheState();
 
@@ -61,7 +60,6 @@ export class LockMechanism {
       this.lockService =
                 this.accessory.getService(this.platform.Service.LockMechanism) ||
                 this.accessory.addService(this.platform.Service.LockMechanism);
-      accessory.displayName;
       // Service Name
       this.lockService.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
       //Required Characteristics" see https://developers.homebridge.io/#/service/LockMechanism
@@ -84,7 +82,7 @@ export class LockMechanism {
     this.subscribeYaleHub();
 
     // Start an update interval
-    interval(this.deviceRefreshRate * 100)
+    interval(this.platform.config.options!.refreshRate * 1000)
       .pipe(skipWhile(() => this.lockUpdateInProgress))
       .subscribe(async () => {
         await this.refreshStatus();
@@ -97,16 +95,17 @@ export class LockMechanism {
         tap(() => {
           this.lockUpdateInProgress = true;
         }),
-        debounceTime(this.platform.config.options!.pushRate! * 100),
+        debounceTime(100),
       )
       .subscribe(async () => {
         try {
           await this.pushChanges();
+          await this.refreshStatus();
         } catch (e: unknown) {
           this.errorLog(`doLockUpdate pushChanges: ${e}`);
         }
         // Refresh the status from the API
-        interval(this.deviceRefreshRate * 500)
+        interval(this.platform.config.options!.refreshRate * 1000)
           .pipe(skipWhile(() => this.lockUpdateInProgress))
           .pipe(take(1))
           .subscribe(async () => {

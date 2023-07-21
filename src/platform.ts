@@ -1,5 +1,5 @@
 import superStringify from 'super-stringify';
-import { readFileSync, writeFileSync } from 'fs';
+import {readFileSync, writeFileSync} from 'fs';
 import {
   API,
   Characteristic,
@@ -8,7 +8,7 @@ import {
   PlatformAccessory,
   Service,
 } from 'homebridge';
-import { PLUGIN_NAME, PLATFORM_NAME } from './settings';
+import {PLUGIN_NAME, PLATFORM_NAME} from './settings';
 import {YaleConnectClient} from './yaleConnectClient';
 import {DoorLock, Endpoint, LockDetails, YaleHubPlatformConfig} from './types';
 import {LockMechanism} from './lock';
@@ -64,11 +64,11 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
           await this.validate();
         } else if (this.config.credentials?.isValidated) {
           this.debugWarnLog(`email: ${this.config.credentials.email}, accountId: ${this.config.credentials.accountId}, password: `
-                        +`${this.config.credentials.password}, isValidated: ${this.config.credentials?.isValidated}`);
+                        + `${this.config.credentials.password}, isValidated: ${this.config.credentials?.isValidated}`);
           this.discoverDevices();
         } else {
           this.errorLog(`accessToken: ${this.config.credentials.accessToken}, password: `
-                        +`${this.config.credentials.password}, isValidated: ${this.config.credentials?.isValidated}`);
+                        + `${this.config.credentials.password}, isValidated: ${this.config.credentials?.isValidated}`);
         }
       } catch (e: unknown) {
         this.errorLog(`Discover Devices 1: ${e}`);
@@ -87,13 +87,15 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
+  private readonly DEFAULT_PULL_FREQUENCY = 300;
+
   /**
      * Verify the config passed to the plugin is valid
      */
   verifyConfig() {
     const platformConfig = {};
-    if(!this.config.options) {
-      this.config.options = { logging: 'debug', refreshRate:100, pushRate:100};
+    if (!this.config.options) {
+      this.config.options = {logging: 'debug', refreshRate: 100, pushRate: 100};
     }
 
     if (this.config.options?.logging) {
@@ -110,9 +112,8 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
     }
 
     if (!this.config.options?.refreshRate) {
-            // default 1800 seconds (30 minutes)
-            this.config.options!.refreshRate! = 1800;
-            this.debugWarnLog('Using Default Refresh Rate (5 minutes).');
+        this.config.options!.refreshRate! = this.DEFAULT_PULL_FREQUENCY;
+        this.debugWarnLog('Using Default Refresh Rate (5 minutes).');
     }
 
     if (!this.config.credentials) {
@@ -137,13 +138,16 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
         const accountId = await this.yaleHub.getAccountId();
         const accessControl = await this.yaleHub.getAdminAccessControlUserForStore();
         const homeId = accessControl.homeIds[0];
+        const entryCode = accessControl.entryCode;
         this.config.homeId = homeId;
+        this.config.entryCode = Number(entryCode);
         const isValidated = Boolean(accountId);
         // If validated successfully, set flag for future use, and you can now use the API
         this.config.credentials.isValidated = isValidated;
         // load in the current config
-        const { pluginConfig, currentConfig } = await this.pluginConfig();
+        const {pluginConfig, currentConfig} = await this.pluginConfig();
         pluginConfig.homeId = homeId;
+        pluginConfig.entryCode = entryCode;
         pluginConfig.credentials.isValidated = this.config.credentials?.isValidated;
         pluginConfig.credentials.accessToken = this.config.credentials.accessToken;
         pluginConfig.accountId = accountId;
@@ -184,7 +188,7 @@ export class YaleHubConnectPlatform implements DynamicPlatformPlugin {
     if (typeof pluginConfig.credentials !== 'object') {
       throw new Error('pluginConfig.credentials is not an object');
     }
-    return { pluginConfig, currentConfig };
+    return {pluginConfig, currentConfig};
   }
 
   /**

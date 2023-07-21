@@ -79,6 +79,7 @@ export class YaleConnectClient {
 
 
   private async doorlockLockUnlock(isLocked, endpointID) {
+    this.log.debug(`Calling lock with ${isLocked}, ${endpointID}, ${this.config.credentials?.accessToken}, ${this.config.entryCode}`);
     const data = {
       'token': {
         'Token': this.config.credentials?.accessToken,
@@ -124,7 +125,11 @@ export class YaleConnectClient {
     const response = await axios.request<GetAdminControlUserForStoreResponse>(config);
     const doorLocks = response.data.DoorLocks;
     //return response.data.DoorLocks;
-    return {locksByEndpointId: _.groupBy(doorLocks, 'endpointID'), homeIds: response.data.HomeIDs};
+    return {
+      locksByEndpointId: _.groupBy(doorLocks, 'endpointID'),
+      homeIds: response.data.HomeIDs,
+      entryCode: response.data.EntryCode,
+    };
   }
 
   async getUpdatedObjects() {
