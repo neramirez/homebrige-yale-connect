@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "YaleConnectClientPlatform",
+  "pluginAlias": "YaleHubConnect",
   "pluginType": "platform",
   "singular": true,
   "customUi": true,
@@ -9,7 +9,7 @@
       "name": {
         "type": "string",
         "title": "Name",
-        "default": "YaleConnectClientPlatform"
+        "default": "YaleHubConnect"
       },
       "credentials": {
         "type": "object",
