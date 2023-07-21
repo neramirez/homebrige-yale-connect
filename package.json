@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "Homebridge Yale Connect",
   "name": "homebridge-yale-connect",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A minimalistic YALE Connect homebridge plugin",
   "license": "Apache-2.0",
   "repository": {
